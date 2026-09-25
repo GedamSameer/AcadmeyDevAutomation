@@ -1,9 +1,11 @@
 // tests/pages/BasePage.js
 //
-// What every screen in the workspace shares: the sidebar, the walkthrough overlay, and
-// the date picker.
+// What every screen in the workspace shares: the sidebar, the walkthrough overlay, the
+// trainer's "Today's training modules" popup, and the date picker.
 
-const { BASE_URL, LIMITS } = require('../support/config');
+const { expect } = require('@playwright/test');
+
+const { BASE_URL, LIMITS, TIMEOUTS } = require('../support/config');
 const { CalendarPicker } = require('./CalendarPicker');
 
 class BasePage {
@@ -11,6 +13,11 @@ class BasePage {
   constructor(page) {
     this.page = page;
     this.calendar = new CalendarPicker(page);
+    // Raised on landing for anyone running batches: one row per batch, each with
+    // "Open today's section / Leave / Week-off / Skip". Not a role=dialog, so it's found
+    // by its heading; the heading's parent is the card holding every row.
+    this.todaysModulesHeading = page.getByRole('heading', { name: "Today's training modules" });
+    this.todaysModules = this.todaysModulesHeading.locator('..');
   }
 
   async gotoRoot() {
@@ -53,6 +60,9 @@ class BasePage {
         .catch(() => false);
       if (!shown) break;
 
+      // Those Skips belong to skipTodaysModules(), which has to click them differently.
+      if (await this.todaysModulesHeading.isVisible()) break;
+
       // Bounded on purpose. The project sets no actionTimeout, so a bare click() on a
       // button that is visible but covered retries until the whole *test* runs out — a
       // dismissal helper that quietly eats a four-minute budget. Give up on a step instead.
@@ -65,6 +75,38 @@ class BasePage {
     }
 
     if (skipped) console.log(`Skipped ${skipped} walkthrough step(s)`);
+    return skipped;
+  }
+
+  /**
+   * Clear the "Today's training modules" popup by skipping every batch in it. It closes
+   * itself once the last one is skipped. A no-op when it doesn't appear.
+   *
+   * The card grows one row per batch and neither scrolls nor fits the viewport — with a
+   * dozen batches it starts ~400px above the top edge — so Playwright calls every Skip
+   * "outside of the viewport" and a real click() never lands. Dispatching the click goes
+   * straight to the button's handler instead.
+   */
+  async skipTodaysModules() {
+    const shown = await this.todaysModulesHeading
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.DIALOG })
+      .then(() => true)
+      .catch(() => false);
+    if (!shown) return 0;
+
+    const skips = this.todaysModules.getByRole('button', { name: 'Skip', exact: true });
+    let skipped = 0;
+    for (let remaining = await skips.count(); remaining > 0; remaining = await skips.count()) {
+      expect(skipped, 'batches skipped in the modules popup').toBeLessThan(LIMITS.MAX_SKIP_CLICKS);
+      await skips.first().dispatchEvent('click');
+      // Wait for the row to go before counting again, so one row is never skipped twice.
+      await expect(skips).toHaveCount(remaining - 1, { timeout: TIMEOUTS.DIALOG });
+      skipped++;
+    }
+
+    await expect(this.todaysModulesHeading, "modules popup closes after the last Skip")
+      .toBeHidden({ timeout: TIMEOUTS.DIALOG });
+    console.log(`Skipped today's module for ${skipped} batch(es)`);
     return skipped;
   }
 }

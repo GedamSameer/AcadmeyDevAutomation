@@ -27,6 +27,8 @@ async function addTraineeAndStartBatch(page, flow, { expectedExisting = TRAINEE_
   const trainee = makeFormTrainee();
 
   await login.login(USERS.trainer);
+  // Landing raises a popup asking about today's module for each running batch — skip them all.
+  await batches.skipTodaysModules();
   await batches.goto();
   const card = await batches.openBatch(flow.batchName);
 

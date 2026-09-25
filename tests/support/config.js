@@ -35,6 +35,10 @@ const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 
 const BASE_URL = required('BASE_URL');
 
+// Staff accounts see a list of workspaces (Traya, Mool Health, Kibo Sciences, ...) after
+// the OTP step. This is the card's title as shown on screen.
+const WORKSPACE = optional('WORKSPACE', 'Traya');
+
 const USERS = {
   onboardingSpecialist: {
     email: required('ONBOARDING_EMAIL'),
@@ -90,9 +94,8 @@ const TRAINEE_COUNT = Number(optional('TRAINEE_COUNT', 5));
 // whole test budget.
 const LIMITS = {
   MAX_DAY_STEPS: 60,          // schedule review stepper
-  // Skip clicks: the tour is a handful of stacked steps, but the trainer's batch popup
-  // has one Skip per batch they're running — so this has to cover a busy trainer, not
-  // just the tour. Raise it if the warning in dismissWalkthrough ever fires.
+  // Skip clicks, for the tour and for the trainer's "Today's training modules" popup,
+  // which has one Skip per batch they're running — so this has to cover a busy trainer.
   MAX_SKIP_CLICKS: 25,
   WALKTHROUGH_BUDGET: 60000,  // wall-clock cap on dismissing the walkthrough
   MAX_TRAINING_STEPS: 12,     // resources to walk before giving up on reaching a test
@@ -142,6 +145,7 @@ module.exports = {
   TESTS_DIR,
   PROJECT_ROOT,
   BASE_URL,
+  WORKSPACE,
   USERS,
   MANAGER_EMAIL,
   MANAGER_FIELD_PLACEHOLDER,

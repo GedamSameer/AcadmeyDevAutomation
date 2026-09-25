@@ -5,8 +5,9 @@
 
 const { expect } = require('@playwright/test');
 
-const { TRAINEE_TEMP_PASSWORD, LIMITS, TIMEOUTS } = require('../support/config');
+const { WORKSPACE, TRAINEE_TEMP_PASSWORD, LIMITS, TIMEOUTS } = require('../support/config');
 const { makeTraineePassword } = require('../support/data');
+const { escapeRegExp } = require('../support/naming');
 const { BasePage } = require('./BasePage');
 
 class LoginPage extends BasePage {
@@ -16,7 +17,12 @@ class LoginPage extends BasePage {
     this.password = page.getByRole('textbox', { name: 'Password' });
     this.sendCode = page.getByRole('button', { name: 'Send code' });
     this.verify = page.getByRole('button', { name: 'Verify' });
-    this.enterWorkspace = page.getByRole('button', { name: 'T Traya Enter workspace' });
+    // One card per workspace, named "<initial> <title> Launch workspace". Anchored on the
+    // exact title so "Traya" can't match another card; the older "Enter workspace" wording
+    // is still accepted in case an account with a single workspace gets that screen.
+    this.enterWorkspace = page.getByRole('button', {
+      name: new RegExp(`^\\S ${escapeRegExp(WORKSPACE)} (Launch|Enter) workspace$`),
+    });
     this.setPassword = page.getByRole('button', { name: 'Set password & continue' });
     this.newPassword = page.getByRole('textbox', { name: 'New password', exact: true });
     this.confirmPassword = page.getByRole('textbox', { name: 'Confirm new password' });

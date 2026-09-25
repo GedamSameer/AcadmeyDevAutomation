@@ -35,7 +35,7 @@ class OnboardingPage extends BasePage {
   }
 
   async goto() {
-    await this.openNav('Onboarding');
+    await this.navLink('Onboarding').click();
   }
 
   async selectHouse(name = 'Out Source') {
