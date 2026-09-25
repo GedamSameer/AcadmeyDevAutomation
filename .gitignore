@@ -15,6 +15,9 @@ degraded-tests/
 utils/
 /bulk.csv
 
+# ── CI — not run from this repo for now ─────────────────────────────────────
+.github/workflows/
+
 # ── Playwright output ───────────────────────────────────────────────────────
 test-results/
 playwright-report/
