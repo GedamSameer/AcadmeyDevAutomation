@@ -1,0 +1,44 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        # Required — add these under Settings → Secrets and variables → Actions → Secrets.
+        BASE_URL: ${{ secrets.BASE_URL }}
+        ONBOARDING_EMAIL: ${{ secrets.ONBOARDING_EMAIL }}
+        ONBOARDING_PASSWORD: ${{ secrets.ONBOARDING_PASSWORD }}
+        TRAINER_EMAIL: ${{ secrets.TRAINER_EMAIL }}
+        TRAINER_PASSWORD: ${{ secrets.TRAINER_PASSWORD }}
+        MANAGER_EMAIL: ${{ secrets.MANAGER_EMAIL }}
+        TRAINEE_TEMP_PASSWORD: ${{ secrets.TRAINEE_TEMP_PASSWORD }}
+        TRAINEE_EMAIL_DOMAIN: ${{ secrets.TRAINEE_EMAIL_DOMAIN }}
+        PARTNER_OPTION: ${{ secrets.PARTNER_OPTION }}
+        LOCATION_OPTION: ${{ secrets.LOCATION_OPTION }}
+        # Optional — set under the Variables tab; left unset, the defaults in config.js apply.
+        MODULE_OPTION: ${{ vars.MODULE_OPTION }}
+        TRAINEE_COUNT: ${{ vars.TRAINEE_COUNT }}
+        BATCH_NO_MIN: ${{ vars.BATCH_NO_MIN }}
+        BATCH_NO_MAX: ${{ vars.BATCH_NO_MAX }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30

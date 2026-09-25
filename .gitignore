@@ -1,0 +1,48 @@
+# ── Secrets ─────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Produced by test runs (contains real logins — never commit) ─────────────
+credentials.txt
+tests/test-data/
+!tests/test-data/.gitkeep
+
+# ── Legacy specs and scratch files — kept locally, not part of the suite ──────
+old-tests/
+working-tests/
+degraded-tests/
+utils/
+/bulk.csv
+
+# ── Playwright output ───────────────────────────────────────────────────────
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+downloads/
+*.webm
+*.zip
+trace.zip
+
+# ── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Logs ────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Editors / OS ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
