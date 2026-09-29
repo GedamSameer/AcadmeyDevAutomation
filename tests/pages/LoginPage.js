@@ -28,6 +28,9 @@ class LoginPage extends BasePage {
     this.confirmPassword = page.getByRole('textbox', { name: 'Confirm new password' });
     this.passwordTaken = page.getByText(/already in use by another user/i);
     this.otpDigits = page.getByRole('textbox', { name: /^Digit \d of verification code$/ });
+    // Staff get a "change your password" popup after Verify, over the workspace picker;
+    // it blocks the picker until dismissed. Same button as //button[normalize-space()='Skip for now'].
+    this.skipPasswordChange = page.getByRole('button', { name: 'Skip for now', exact: true });
   }
 
   /** Email + password, then the OTP step. The dev env pre-fills the code. */
@@ -40,12 +43,32 @@ class LoginPage extends BasePage {
     await this.verify.click();
   }
 
-  /** Full staff login: credentials, workspace, walkthrough out of the way. */
+  /** Full staff login: credentials, workspace, password prompt and walkthrough out of the way. */
   async login(user) {
     await this.submitCredentials(user);
+    // The password-change popup sits over the workspace picker, so it goes first.
+    await this.skipPasswordChangePrompt();
     await this.enterWorkspace.click();
     await expect(this.page.getByRole('navigation')).toBeVisible({ timeout: TIMEOUTS.NAV });
     await this.dismissWalkthrough();
+  }
+
+  /**
+   * Close the "change your password" popup staff get after Verify, via "Skip for now".
+   * A no-op when it doesn't appear.
+   */
+  async skipPasswordChangePrompt() {
+    const shown = await this.skipPasswordChange
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.DIALOG })
+      .then(() => true)
+      .catch(() => false);
+    if (!shown) return false;
+
+    await this.skipPasswordChange.click();
+    await expect(this.skipPasswordChange, 'password-change popup closes after Skip for now')
+      .toBeHidden({ timeout: TIMEOUTS.DIALOG });
+    console.log('Skipped the password-change prompt');
+    return true;
   }
 
   /**
