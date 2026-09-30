@@ -27,6 +27,11 @@ class BasePage {
     return this.page.getByRole('navigation').getByRole('link', { name, exact: true });
   }
 
+  /** Open a screen from the sidebar. */
+  async openNav(name) {
+    await this.navLink(name).click();
+  }
+
   /**
    * Landing in the workspace can raise a walkthrough — the trainer usually gets the
    * "start a batch" prompt. It comes in stacked steps, each with its own Skip, and until
@@ -56,8 +61,17 @@ class BasePage {
       // Bounded on purpose. The project sets no actionTimeout, so a bare click() on a
       // button that is visible but covered retries until the whole *test* runs out — a
       // dismissal helper that quietly eats a four-minute budget. Give up on a step instead.
-      const clicked = await skip
-        .click({ timeout: 5000 })
+      //
+      // The trainer's "Today's training modules" popup lists one row per running batch and
+      // is centred in a fixed, non-scrolling overlay — once there are more rows than fit,
+      // the top ones sit above the viewport where no real click can reach them. Fire the
+      // click on the element directly for those.
+      const box = await skip.boundingBox().catch(() => null);
+      const viewport = this.page.viewportSize();
+      const onScreen = !box || !viewport || (box.y >= 0 && box.y + box.height <= viewport.height);
+      const clicked = await (onScreen
+        ? skip.click({ timeout: 5000 })
+        : skip.dispatchEvent('click', undefined, { timeout: 5000 }))
         .then(() => true)
         .catch(() => false); // a step can tear itself down mid-click
       if (clicked) skipped++;

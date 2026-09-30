@@ -93,7 +93,7 @@ const LIMITS = {
   // Skip clicks: the tour is a handful of stacked steps, but the trainer's batch popup
   // has one Skip per batch they're running — so this has to cover a busy trainer, not
   // just the tour. Raise it if the warning in dismissWalkthrough ever fires.
-  MAX_SKIP_CLICKS: 25,
+  MAX_SKIP_CLICKS: 60,
   WALKTHROUGH_BUDGET: 60000,  // wall-clock cap on dismissing the walkthrough
   MAX_TRAINING_STEPS: 12,     // resources to walk before giving up on reaching a test
   MAX_DECK_PAGES: 60,         // slides in one deck

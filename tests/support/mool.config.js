@@ -50,6 +50,11 @@ const MOOL_PATHS = {
   RUN_FILE: path.join(TESTS_DIR, 'test-data', 'mool-last-run.json'),
 };
 
+const MOOL_TIMEOUTS = {
+  // accounts are created in files of 50 after Onboard — a five-person batch has taken 30s+
+  ONBOARD_SUMMARY: 3 * 60 * 1000,
+};
+
 const MOOL_PHASE_TIMEOUTS = {
   STARFLEET: 2 * 60 * 1000,
 };
@@ -62,5 +67,6 @@ module.exports = {
   MOOL_MANAGER_EMAIL,
   STARFLEET_URL,
   MOOL_PATHS,
+  MOOL_TIMEOUTS,
   MOOL_PHASE_TIMEOUTS,
 };

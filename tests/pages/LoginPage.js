@@ -16,7 +16,8 @@ class LoginPage extends BasePage {
     this.password = page.getByRole('textbox', { name: 'Password' });
     this.sendCode = page.getByRole('button', { name: 'Send code' });
     this.verify = page.getByRole('button', { name: 'Verify' });
-    this.enterWorkspace = page.getByRole('button', { name: 'T Traya Enter workspace' });
+    this.enterWorkspace = page.getByRole('button', { name: 'Traya' });
+    this.skipForNow = page.locator("//button[normalize-space()='Skip for now']");
     this.setPassword = page.getByRole('button', { name: 'Set password & continue' });
     this.newPassword = page.getByRole('textbox', { name: 'New password', exact: true });
     this.confirmPassword = page.getByRole('textbox', { name: 'Confirm new password' });
@@ -37,9 +38,24 @@ class LoginPage extends BasePage {
   /** Full staff login: credentials, workspace, walkthrough out of the way. */
   async login(user) {
     await this.submitCredentials(user);
+    await this.skipPromptIfShown();
     await this.enterWorkspace.click();
     await expect(this.page.getByRole('navigation')).toBeVisible({ timeout: TIMEOUTS.NAV });
     await this.dismissWalkthrough();
+  }
+
+  /**
+   * After Verify, a "Skip for now" prompt can sit in front of the workspace picker. It
+   * doesn't show on every login, so wait for whichever screen arrives first and only click
+   * Skip when it is the one that did.
+   */
+  async skipPromptIfShown() {
+    await expect(this.skipForNow.or(this.enterWorkspace).first())
+      .toBeVisible({ timeout: TIMEOUTS.BRANCH });
+    if (await this.skipForNow.isVisible()) {
+      await this.skipForNow.click();
+      await expect(this.skipForNow).toBeHidden({ timeout: TIMEOUTS.DIALOG });
+    }
   }
 
   /**
