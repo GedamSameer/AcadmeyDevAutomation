@@ -23,6 +23,8 @@ class LoginPage extends BasePage {
     this.confirmPassword = page.getByRole('textbox', { name: 'Confirm new password' });
     this.passwordTaken = page.getByText(/already in use by another user/i);
     this.otpDigits = page.getByRole('textbox', { name: /^Digit \d of verification code$/ });
+    // Shown instead of the workspace when the account has no access to the tile clicked.
+    this.notYourSpace = page.getByText(/this space isn['’]?t yours/i).first();
   }
 
   /** Email + password, then the OTP step. The dev env pre-fills the code. */
@@ -31,7 +33,14 @@ class LoginPage extends BasePage {
     await this.email.fill(email);
     await this.password.fill(password);
     await this.sendCode.click();
-    // dev env pre-fills the OTP — put the real code entry here if that ever changes
+    // dev env pre-fills the OTP — put the real code entry here if that ever changes.
+    // Fail here if it never lands, rather than clicking Verify on an empty code.
+    await expect
+      .poll(() => this.otpDigits.evaluateAll((els) => els.filter((el) => el.value.trim()).length), {
+        timeout: TIMEOUTS.LIST,
+        message: `auto-filled OTP on the verify screen for ${email}`,
+      })
+      .toBe(6);
     await this.verify.click();
   }
 
@@ -40,7 +49,13 @@ class LoginPage extends BasePage {
     await this.submitCredentials(user);
     await this.skipPromptIfShown();
     await this.enterWorkspace.click();
-    await expect(this.page.getByRole('navigation')).toBeVisible({ timeout: TIMEOUTS.NAV });
+
+    // Wait for whichever lands — the workspace or the access refusal — then fail on the refusal.
+    const nav = this.page.getByRole('navigation');
+    await expect(nav.or(this.notYourSpace).first()).toBeVisible({ timeout: TIMEOUTS.NAV });
+    await expect(this.notYourSpace, `${user.email} was refused the workspace: "This space isn't yours"`)
+      .toBeHidden();
+    await expect(nav).toBeVisible({ timeout: TIMEOUTS.NAV });
     await this.dismissWalkthrough();
   }
 

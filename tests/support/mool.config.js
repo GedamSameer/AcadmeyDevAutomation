@@ -25,11 +25,28 @@ const optional = (name, fallback) => {
   return value && value.trim() ? value.trim() : fallback;
 };
 
-// One login for both apps: onboarding in the Mool Health workspace, then Starfleet.
+// The Starfleet admin login.
 const MOOL_USER = {
   email: required('MOOL_EMAIL'),
   password: required('MOOL_PASSWORD'),
 };
+
+// The two staff roles in the Mool Health workspace — same people as Traya, but Mool
+// accounts carry their own password.
+const MOOL_USERS = {
+  onboardingSpecialist: {
+    email: required('MOOL_ONBOARDING_EMAIL'),
+    password: required('MOOL_ONBOARDING_PASSWORD'),
+  },
+  trainer: {
+    email: required('MOOL_TRAINER_EMAIL'),
+    password: required('MOOL_TRAINER_PASSWORD'),
+  },
+};
+
+// Domain Mool mints trainee logins on. Unset, the trainer phase takes the first email
+// address in the trainee's row instead.
+const MOOL_TRAINEE_EMAIL_DOMAIN = optional('MOOL_TRAINEE_EMAIL_DOMAIN', null);
 
 // Mool's onboarding dropdowns carry a different partner / location / cohort than Traya's.
 const MOOL_PARTNER_OPTION = required('MOOL_PARTNER_OPTION');
@@ -61,6 +78,8 @@ const MOOL_PHASE_TIMEOUTS = {
 
 module.exports = {
   MOOL_USER,
+  MOOL_USERS,
+  MOOL_TRAINEE_EMAIL_DOMAIN,
   MOOL_PARTNER_OPTION,
   MOOL_LOCATION_OPTION,
   MOOL_MODULE_OPTION,

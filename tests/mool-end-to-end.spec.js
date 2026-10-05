@@ -1,22 +1,33 @@
 // tests/mool-end-to-end.spec.js
 //
-// The Mool Health counterpart of end-to-end.spec.js, two phases run in order:
-//   1. Bulk-onboard N outsource trainees in the Mool Health workspace -> creates a batch
-//   2. Sign in to Starfleet and open User -> User List
+// The Mool Health counterpart of end-to-end.spec.js — one flow, three phases, run in order:
+//   1. Onboarding specialist bulk-onboards N outsource trainees  -> creates a batch
+//   2. Trainer opens that same batch, adds one more trainee by hand, starts the batch
+//   3. That trainee does first-time login (temp password -> new password) and starts training
 //
-// Serial, so Starfleet is skipped when onboarding fails. Both phases use the MOOL_EMAIL /
-// MOOL_PASSWORD login from .env, each in its own browser context.
+// Same page objects as Traya, entered through the Mool Health workspace tile. Each phase
+// gets its own browser context, and the block is serial, so a failed phase skips the
+// ones that depend on it. Logins come from MOOL_ONBOARDING_* / MOOL_TRAINER_* in .env.
 //
 // Run:  npx playwright test tests/mool-end-to-end.spec.js --project=chromium --headed
+//
+// Every phase publishes what the next one needs to tests/test-data/mool-last-run.json, and
+// reads its own inputs from env first, so a phase can be re-run on its own:
+//   MOOL_BATCH_NAME="Tata 1 Mg Bangalore PC 499" MOOL_BATCH_CODE=RT93VM \
+//     npx playwright test tests/mool-end-to-end.spec.js -g "Trainer"
 
 const { test } = require('@playwright/test');
 
 const { PHASE_TIMEOUTS } = require('./support/config');
-const { MOOL_PHASE_TIMEOUTS } = require('./support/mool.config');
 const { moolFlow } = require('./support/mool.state');
 const { withFreshContext } = require('./support/session');
 
-const { moolBulkOnboardTrainees, openStarfleetUserList } = require('./flows/mool.flow');
+const {
+  moolBulkOnboardTrainees,
+  moolAddTraineeAndStartBatch,
+  moolTraineeJoinsBatch,
+} = require('./flows/mool.flow');
+const { traineeWorksThroughDayOne } = require('./flows/trainee.flow');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -27,8 +38,21 @@ test.describe('Mool Health Academy', () => {
     await withFreshContext(browser, (page) => moolBulkOnboardTrainees(page, moolFlow));
   });
 
-  test('Admin opens User List in Starfleet', async ({ browser }) => {
-    test.setTimeout(MOOL_PHASE_TIMEOUTS.STARFLEET);
-    await withFreshContext(browser, (page) => openStarfleetUserList(page));
+  test('Trainer Adds a Trainee and Starts batch in Mool Health', async ({ browser }) => {
+    test.setTimeout(PHASE_TIMEOUTS.TRAINER);
+    await withFreshContext(browser, (page) => moolAddTraineeAndStartBatch(page, moolFlow));
+  });
+
+  test('Trainee Logins and takes Training in Mool Health', async ({ browser }) => {
+    test.setTimeout(PHASE_TIMEOUTS.TRAINEE_LOGIN);
+
+    await withFreshContext(browser, async (page) => {
+      const training = await moolTraineeJoinsBatch(page, moolFlow);
+
+      // Raised once logged in — the two ~2-minute "Review first" gates outlast the login budget.
+      test.setTimeout(PHASE_TIMEOUTS.TRAINEE_TRAINING);
+
+      await traineeWorksThroughDayOne(training, moolFlow);
+    });
   });
 });

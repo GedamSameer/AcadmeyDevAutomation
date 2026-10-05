@@ -1,7 +1,10 @@
 // tests/support/mool.state.js
 //
 // The Mool run's handoff, kept apart from state.js so it never clobbers the Traya
-// last-run.json. Env vars win, same as there.
+// last-run.json. Env vars win, same as there:
+//
+//   MOOL_BATCH_NAME="Tata 1 Mg Bangalore PC 499" MOOL_BATCH_CODE=RT93VM \
+//     npx playwright test tests/mool-end-to-end.spec.js -g "Trainer"
 
 const fs = require('fs');
 const path = require('path');
@@ -19,6 +22,13 @@ const moolFlow = {
   batchNo: null,
   batchName: process.env.MOOL_BATCH_NAME || null,
   batchCode: process.env.MOOL_BATCH_CODE || null,
+  trainee: process.env.MOOL_TRAINEE_EMAIL
+    ? {
+        email: process.env.MOOL_TRAINEE_EMAIL,
+        password: process.env.MOOL_TRAINEE_PASSWORD || null,
+        fullName: '(from env)',
+      }
+    : null,
 };
 
 function saveMoolRun() {
