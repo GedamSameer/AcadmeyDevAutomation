@@ -21,10 +21,9 @@ const { saveMoolRun, moolBatchNameFor } = require('../support/mool.state');
 const { saveCredentials } = require('../support/state');
 const { escapeRegExp } = require('../support/naming');
 const { writeBulkCsv, makeFormTrainee } = require('../support/data');
-const { MoolLoginPage, MoolOnboardingPage, MoolBatchManagementPage } =
+const { MoolLoginPage, MoolOnboardingPage, MoolBatchManagementPage, MoolTrainingPage } =
   require('../pages/MoolPages');
 const { StarfleetPage } = require('../pages/StarfleetPage');
-const { TrainingPage } = require('../pages/TrainingPage');
 
 /**
  * Publishes batchNo / batchName / batchCode onto `flow`.
@@ -149,7 +148,7 @@ async function moolTraineeJoinsBatch(page, flow) {
   expect(flow.batchCode, 'batch code from the batch card').toBeTruthy();
 
   const login = new MoolLoginPage(page);
-  const training = new TrainingPage(page);
+  const training = new MoolTrainingPage(page);
 
   await login.loginAsTrainee(flow.trainee, {
     onPasswordSet: (password) => {

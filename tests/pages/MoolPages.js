@@ -7,13 +7,14 @@
 const { expect } = require('@playwright/test');
 const { faker } = require('@faker-js/faker');
 
-const { BATCH_NO_RANGE, LIMITS } = require('../support/config');
+const { BATCH_NO_RANGE, LIMITS, TIMEOUTS } = require('../support/config');
 const { MOOL_PARTNER_OPTION, MOOL_LOCATION_OPTION, MOOL_TIMEOUTS } =
   require('../support/mool.config');
 const { moolBatchNameFor } = require('../support/mool.state');
 const { LoginPage } = require('./LoginPage');
 const { OnboardingPage } = require('./OnboardingPage');
 const { BatchManagementPage } = require('./BatchManagementPage');
+const { TrainingPage } = require('./TrainingPage');
 
 class MoolLoginPage extends LoginPage {
   constructor(page) {
@@ -73,4 +74,35 @@ class MoolBatchManagementPage extends BatchManagementPage {
   }
 }
 
-module.exports = { MoolLoginPage, MoolOnboardingPage, MoolBatchManagementPage };
+class MoolTrainingPage extends TrainingPage {
+  constructor(page) {
+    super(page);
+    // Mool may ask for a daily check-in remark after Continue Training.
+    this.checkInRemark = page.locator("//textarea[@id='checkin-remark']");
+    this.checkInAndStart = page.locator("//button[normalize-space()='Check in & start the day']");
+  }
+
+  /** The check-in popup opens once Continue Training is clicked. */
+  async afterEnteringTraining() {
+    await this.checkIn();
+  }
+
+  /** Fills the check-in popup if it shows up; otherwise carries on with the normal flow. */
+  async checkIn(remark = 'Good') {
+    const prompted = await this.checkInRemark
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.DIALOG })
+      .then(() => true, () => false);
+    if (!prompted) {
+      console.log('Mool: no check-in popup — continuing');
+      return;
+    }
+
+    await this.checkInRemark.fill(remark);
+
+    await expect(this.checkInAndStart).toBeEnabled();
+    await this.checkInAndStart.click();
+    await expect(this.checkInRemark).toBeHidden({ timeout: TIMEOUTS.NAV });
+  }
+}
+
+module.exports = { MoolLoginPage, MoolOnboardingPage, MoolBatchManagementPage, MoolTrainingPage };

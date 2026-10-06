@@ -76,6 +76,7 @@ class TrainingPage extends BasePage {
    */
   async workThroughTraining() {
     await this.continueTraining.click();
+    await this.afterEnteringTraining();
 
     for (let step = 1; step <= LIMITS.MAX_TRAINING_STEPS; step++) {
       const startTest = this.page.getByRole('button', { name: /^\s*Start test\s*$/i }).first();
@@ -113,6 +114,9 @@ class TrainingPage extends BasePage {
 
     return null;
   }
+
+  /** Hook for anything a tenant shows once Continue Training is clicked. Traya shows nothing. */
+  async afterEnteringTraining() {}
 }
 
 module.exports = { TrainingPage };
