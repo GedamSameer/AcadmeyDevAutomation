@@ -37,7 +37,7 @@ async function moolBulkOnboardTrainees(page, flow, { count = TRAINEE_COUNT } = {
   const batches = new MoolBatchManagementPage(page);
 
   writeBulkCsv(MOOL_PATHS.CSV, count);
-  await login.login(MOOL_USERS.onboardingSpecialist);
+  await login.login(MOOL_USER);
 
   await batches.goto();
   const batchNo = await batches.pickFreeBatchNo();
