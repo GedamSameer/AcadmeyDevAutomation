@@ -1,0 +1,1 @@
+ISSUE: CMS v2 Directories didn't list the new module "QA Buddy Offline Copy mvp2130d" until the page was reloaded

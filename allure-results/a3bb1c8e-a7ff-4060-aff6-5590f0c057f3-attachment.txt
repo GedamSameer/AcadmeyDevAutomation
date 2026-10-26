@@ -1,0 +1,2 @@
+CMS: "Offline" downloaded and published as "QA Buddy Offline Copy mvp2130d"
+CMS v2: Directories OK (8 items in Offline); Config & Bank OK — 335 questions, 9 forms, 91 resources

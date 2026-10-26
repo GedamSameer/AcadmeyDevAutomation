@@ -65,7 +65,7 @@ test.describe('Traya Academy — Buddy Up', () => {
     await withFreshContext(browser, (page) => adminChecksCms(page, buddyFlow));
   });
 
-  test.only('QA and Trainee complete a Buddy Up call', async ({ browser }) => {
+  test('QA and Trainee complete a Buddy Up call', async ({ browser }) => {
     test.setTimeout(BUDDY_PHASE_TIMEOUTS.BUDDY_UP);
     await qaBuddyUpCall(browser, buddyFlow);
   });

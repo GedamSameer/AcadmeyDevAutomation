@@ -1,0 +1,7 @@
+Login attempt 1 for tra299634dimh@partner.traya.health: invalid credentials — clicking Send code again
+credentials.txt <- Batch ID: 7KN334 | Batch: DrITM Mohali Offline 835 | Username: Mortimer Orn | Email: tra299634dimh@partner.traya.health | Password: Buck@1999 | Set: 2026-10-26T09:24:01.292Z
+No batch-code gate — trainee is already in the batch
+No check-in popup — continuing
+Training step 1: Continue to Training Rules (Traya Onboarding Training)
+Training step 3: paged 31 slide(s)
+tra299634dimh@partner.traya.health trained up to the Spoken English assessment

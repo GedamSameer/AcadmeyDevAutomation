@@ -1,0 +1,5 @@
+Login attempt 1 for rpvq620092dimh@partner.traya.health: invalid credentials — clicking Send code again
+credentials.txt <- Batch ID: 7KN334 | Batch: DrITM Mohali Offline 835 | Username: Raymond Nikolaus | Email: rpvq620092dimh@partner.traya.health | Password: Mack@1972 | Set: 2026-10-26T09:29:23.823Z
+Trainee joins via "Join Live Call Now"
+QA answered 44 questions at random — 52%
+Buddy Up: Ravi Sharma evaluated Raymond Nikolaus — 52%, completed on both sides

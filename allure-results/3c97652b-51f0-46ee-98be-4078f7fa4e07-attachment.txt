@@ -1,0 +1,3 @@
+ISSUE: Trainee's Buddy Up card before joining names the QA as "QA Evaluator (QA Evaluator)" instead of "Ravi Sharma"
+ISSUE: Daily check-in popup opened on top of the live Buddy Up call and blocked the trainee's controls
+ISSUE: QA dashboard still showed Raymond Nikolaus as not evaluated until the page was reloaded
