@@ -32,6 +32,11 @@ class OnboardingPage extends BasePage {
     this.location = page.getByRole('combobox', { name: 'Partner location' });
     this.batchNoField = page.getByRole('textbox', { name: 'Batch No.' });
     this.confirmOnboard = page.getByRole('button', { name: 'Onboard', exact: true });
+    this.completedDialog = page
+      .getByRole('dialog')
+      .filter({ has: page.getByRole('button', { name: 'Done', exact: true }) })
+      .last();
+    this.doneButton = this.completedDialog.locator('xpath=.//button[normalize-space()="Done"]');
   }
 
   async goto() {
@@ -124,6 +129,15 @@ class OnboardingPage extends BasePage {
       .locator(`//button[normalize-space()='Create & onboard ${count} people']`)
       .click();
     await this.confirmOnboard.click();
+
+    await expect(this.completedDialog, 'bulk onboarding completed dialog')
+      .toBeVisible({ timeout: TIMEOUTS.LIST });
+    await expect(this.completedDialog.locator('h2'), 'bulk onboarding completed dialog heading')
+      .toBeVisible({ timeout: TIMEOUTS.LIST });
+    await expect(this.doneButton, 'Done button in bulk onboarding completed dialog')
+      .toBeVisible({ timeout: TIMEOUTS.LIST });
+    await this.doneButton.click();
+    await expect(this.completedDialog).toBeHidden({ timeout: TIMEOUTS.NAV });
   }
 }
 

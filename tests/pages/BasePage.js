@@ -37,13 +37,21 @@ class BasePage {
    * "start a batch" prompt. It comes in stacked steps, each with its own Skip, and until
    * they are all gone the overlay eats clicks meant for the page behind it. So: click
    * every Skip that turns up, not just the first. A no-op when no walkthrough appears.
+   *
+   * The trainer's "Today's training modules" popup has one Skip per running batch plus a
+   * Skip All; when Skip All is on screen it wins, so the popup goes in one click instead
+   * of one per batch.
    */
   async dismissWalkthrough() {
     const deadline = Date.now() + LIMITS.WALKTHROUGH_BUDGET;
     let skipped = 0;
 
     for (let i = 0; i < LIMITS.MAX_SKIP_CLICKS && Date.now() < deadline; i++) {
-      const skip = this.page
+      const skipAll = this.page
+        .getByRole('button', { name: /^\s*Skip\s*all\s*$/i })
+        .filter({ visible: true })
+        .first();
+      const skipOne = this.page
         .getByRole('button', { name: /^\s*Skip\s*$/i })
         .filter({ visible: true })
         .first();
@@ -52,20 +60,22 @@ class BasePage {
       // be patient; later looks only ask whether another step followed, but still allow
       // for one rendering as slowly as the first.
       const budget = Math.max(1000, Math.min(i === 0 ? 12000 : 4000, deadline - Date.now()));
-      const shown = await skip
+      const shown = await skipAll
+        .or(skipOne)
+        .first()
         .waitFor({ state: 'visible', timeout: budget })
         .then(() => true)
         .catch(() => false);
       if (!shown) break;
+      const skip = (await skipAll.isVisible()) ? skipAll : skipOne;
 
       // Bounded on purpose. The project sets no actionTimeout, so a bare click() on a
       // button that is visible but covered retries until the whole *test* runs out — a
       // dismissal helper that quietly eats a four-minute budget. Give up on a step instead.
       //
-      // The trainer's "Today's training modules" popup lists one row per running batch and
-      // is centred in a fixed, non-scrolling overlay — once there are more rows than fit,
-      // the top ones sit above the viewport where no real click can reach them. Fire the
-      // click on the element directly for those.
+      // The trainer's "Today's training modules" popup is centred in a fixed, non-scrolling
+      // overlay — with enough batches, its buttons can sit outside the viewport where no
+      // real click can reach them. Fire the click on the element directly for those.
       const box = await skip.boundingBox().catch(() => null);
       const viewport = this.page.viewportSize();
       const onScreen = !box || !viewport || (box.y >= 0 && box.y + box.height <= viewport.height);

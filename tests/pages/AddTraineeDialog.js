@@ -20,7 +20,7 @@ class AddTraineeDialog {
 
     // Named, because the date picker inside the form is a role=dialog popover too — and
     // the title doubles as proof the form is attached to the batch we just created.
-    this.root = page.getByRole('dialog', { name: `Add a trainee to ${batchName}` });
+    this.root = page.getByRole('dialog', { name: `Add trainees to ${batchName}` });
 
     this.fullName = this.root.getByRole('textbox', { name: 'Full name (as per Govt ID)' });
     this.phone = this.root.getByRole('textbox', { name: 'Phone number' });
@@ -34,6 +34,40 @@ class AddTraineeDialog {
     // The form gives way to a confirmation modal; "Onboard this person" is a different
     // button, so exact matching keeps the two apart.
     this.confirmButton = page.getByRole('button', { name: 'Onboard', exact: true });
+
+    // The dialog opens on "New trainee"; "Upload CSV" takes an onboarding sheet instead.
+    this.newTraineeTab = this.root.getByRole('tab', { name: 'New trainee' });
+    this.uploadCsvTab = this.root.getByRole('tab', { name: 'Upload CSV' });
+    this.csvInput = this.root.locator('input[type=file]');
+    this.csvOnboardButton = this.root.getByRole('button', { name: /^Onboard \d+ Candidates? into Batch$/ });
+  }
+
+  async selectNewTrainee() {
+    await this.newTraineeTab.click();
+    await expect(this.fullName).toBeVisible({ timeout: TIMEOUTS.DIALOG });
+  }
+
+  /**
+   * Upload CSV tab: pick the sheet, check the preview lists exactly these people, onboard.
+   * Onboarding then runs in the background and the dialog closes on its own — the rows
+   * reaching the batch table is checked by the caller.
+   */
+  async uploadCsv(csvPath, names) {
+    await this.uploadCsvTab.click();
+    await this.csvInput.setInputFiles(csvPath);
+
+    await expect(this.root.getByText(`Preview Candidates (${names.length})`))
+      .toBeVisible({ timeout: TIMEOUTS.LIST });
+    for (const name of names) {
+      await expect(this.root.getByRole('row').filter({ hasText: name }), `${name} in the CSV preview`)
+        .toBeVisible();
+    }
+
+    await expect(this.csvOnboardButton)
+      .toHaveText(new RegExp(`^Onboard ${names.length} Candidates? into Batch$`));
+    await this.csvOnboardButton.click();
+    await expect(this.root, 'Add Trainee dialog closes once the CSV onboarding is queued')
+      .toBeHidden({ timeout: TIMEOUTS.NAV });
   }
 
   async waitForOpen() {

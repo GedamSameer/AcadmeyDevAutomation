@@ -17,7 +17,7 @@ class BatchManagementPage extends BasePage {
     super(page);
     this.search = page.getByRole('textbox', { name: /search cohorts/i });
     this.addTrainee = page.getByRole('button', { name: '+ Add Trainee' });
-    this.activeTab = page.getByRole('button', { name: /^Active \(\d+\)$/ });
+    this.activeTab = page.getByRole('tab', { name: /^Active \(\d+\)$/ });
     this.startBatchButton = page.getByRole('button', { name: /^\s*Start batch\s*$/i }).first();
   }
 
@@ -101,6 +101,31 @@ class BatchManagementPage extends BasePage {
   /** The row for one trainee in the open batch's Trainees table. */
   traineeRow(fullName) {
     return this.page.getByRole('row').filter({ hasText: fullName }).first();
+  }
+
+  /**
+   * The "Staff Support" tag printed under a person's name in the Trainee cell. Trainees
+   * carry no tag at all, so its absence is what "shows as a trainee" looks like.
+   */
+  staffSupportTag(fullName) {
+    return this.traineeRow(fullName).getByRole('cell').first().getByText('Staff Support', { exact: true });
+  }
+
+  /**
+   * Reload, then re-select the batch — selecting a batch doesn't change the URL, so a
+   * reload lands on the default one. This is the "after refresh" check: the table is
+   * refetched from the server rather than read from the client cache.
+   */
+  async reloadBatch(batchName) {
+    await this.page.reload({ waitUntil: 'networkidle' });
+    await this.dismissWalkthrough();
+    return this.openBatch(batchName);
+  }
+
+  /** Open a trainee's profile from the name link in their row. */
+  async openTraineeProfile(fullName) {
+    await this.traineeRow(fullName).getByRole('link', { name: fullName, exact: true }).click();
+    await this.page.waitForURL(/\/trainee\//, { timeout: TIMEOUTS.NAV });
   }
 
   /**

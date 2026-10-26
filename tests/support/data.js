@@ -38,14 +38,14 @@ function makeTraineePassword() {
   return `${name}@${year}`;
 }
 
-/** A row for the bulk CSV. */
-function makeCsvTrainee() {
+/** A row for the bulk CSV. `role` is the sheet's Role column: 'Trainee' or 'Staff Support'. */
+function makeCsvTrainee(role = 'Trainee') {
   const sex = faker.helpers.arrayElement(['male', 'female']);
   return {
     // first + last only — no titles or suffixes, "as per Govt ID"
     name: `${faker.person.firstName(sex)} ${faker.person.lastName()}`,
     phone: `9${faker.string.numeric(9)}`,
-    role: 'Trainee',
+    role,
     type: '',
     languages: faker.helpers.arrayElements(LANGUAGES, { min: 1, max: 2 }).join(', '),
     employeeId: `${faker.string.alpha({ length: 4, casing: 'upper' })}${faker.string.numeric(6)}`,
@@ -74,8 +74,9 @@ function makeFormTrainee() {
 
 const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v);
 
-function writeBulkCsv(filePath, count) {
-  const rows = Array.from({ length: count }, makeCsvTrainee).map((t) =>
+/** Write the given makeCsvTrainee() rows as an onboarding sheet. */
+function writeCsvRows(filePath, trainees) {
+  const rows = trainees.map((t) =>
     [t.name, t.phone, t.role, t.type, t.languages, t.employeeId,
      t.gender, t.versantScore, t.versantTin, t.dob].map(csvCell).join(',')
   );
@@ -84,10 +85,15 @@ function writeBulkCsv(filePath, count) {
   return filePath;
 }
 
+function writeBulkCsv(filePath, count) {
+  return writeCsvRows(filePath, Array.from({ length: count }, () => makeCsvTrainee()));
+}
+
 module.exports = {
   hasDigitRun,
   makeTraineePassword,
   makeCsvTrainee,
   makeFormTrainee,
+  writeCsvRows,
   writeBulkCsv,
 };

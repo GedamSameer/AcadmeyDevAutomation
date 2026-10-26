@@ -89,10 +89,11 @@ const TRAINEE_COUNT = Number(optional('TRAINEE_COUNT', 5));
 // Safety caps, so a stuck stepper / deck / walkthrough fails fast instead of eating the
 // whole test budget.
 const LIMITS = {
+  MAX_LOGIN_CLICKS: 8,          // initial attempt plus seven retries when login API fails
   MAX_DAY_STEPS: 60,          // schedule review stepper
-  // Skip clicks: the tour is a handful of stacked steps, but the trainer's batch popup
-  // has one Skip per batch they're running — so this has to cover a busy trainer, not
-  // just the tour. Raise it if the warning in dismissWalkthrough ever fires.
+  // Skip clicks: the tour is a handful of stacked steps, and the trainer's batch popup
+  // is cleared with its Skip All. The headroom covers falling back to one Skip per batch
+  // if Skip All ever goes missing.
   MAX_SKIP_CLICKS: 60,
   WALKTHROUGH_BUDGET: 60000,  // wall-clock cap on dismissing the walkthrough
   MAX_TRAINING_STEPS: 12,     // resources to walk before giving up on reaching a test

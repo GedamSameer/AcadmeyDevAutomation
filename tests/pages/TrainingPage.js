@@ -13,11 +13,44 @@ class TrainingPage extends BasePage {
     this.batchCode = page.getByRole('textbox', { name: 'Batch code' });
     this.verifyAndStart = page.getByRole('button', { name: 'Verify & start training' });
     this.continueTraining = page.getByRole('link', { name: /Continue Training/i }).first();
+    // The daily check-in some tenants ask for after Continue Training.
+    this.checkInRemark = page.locator("//textarea[@id='checkin-remark']");
+    this.checkInAndStart = page.locator("//button[normalize-space()='Check in & start the day']");
   }
 
-  /** The join gate every trainee hits before any content unlocks. */
+  /**
+   * Fills the check-in popup if it shows up; otherwise carries on with the normal flow.
+   * Returns whether it was there.
+   */
+  async checkIn(remark = 'Good') {
+    const prompted = await this.checkInRemark
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.DIALOG })
+      .then(() => true, () => false);
+    if (!prompted) {
+      console.log('No check-in popup — continuing');
+      return false;
+    }
+
+    await this.checkInRemark.fill(remark);
+
+    await expect(this.checkInAndStart).toBeEnabled();
+    await this.checkInAndStart.click();
+    await expect(this.checkInRemark).toBeHidden({ timeout: TIMEOUTS.NAV });
+    return true;
+  }
+
+  /**
+   * The join gate a trainee can hit before any content unlocks. Traya no longer shows it
+   * to a trainee the trainer already put in a batch — they land straight on the home page
+   * with Continue Training — so wait for whichever arrives and only fill the gate if it did.
+   */
   async joinBatch(batchCode) {
-    await expect(this.batchCode).toBeVisible({ timeout: TIMEOUTS.NAV });
+    await expect(this.batchCode.or(this.continueTraining).first())
+      .toBeVisible({ timeout: TIMEOUTS.NAV });
+    if (!(await this.batchCode.isVisible())) {
+      console.log('No batch-code gate — trainee is already in the batch');
+      return;
+    }
     await this.batchCode.fill(batchCode);
 
     await expect(this.verifyAndStart).toBeEnabled();

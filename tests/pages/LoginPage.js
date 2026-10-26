@@ -22,23 +22,79 @@ class LoginPage extends BasePage {
     this.newPassword = page.getByRole('textbox', { name: 'New password', exact: true });
     this.confirmPassword = page.getByRole('textbox', { name: 'Confirm new password' });
     this.passwordTaken = page.getByText(/already in use by another user/i);
+    // The wording has been both "Invalid credentials" and "Invalid email or password."
+    this.invalidCredentials = page.getByText(/invalid (credentials|email or password)/i).first();
     this.otpDigits = page.getByRole('textbox', { name: /^Digit \d of verification code$/ });
     // Shown instead of the workspace when the account has no access to the tile clicked.
     this.notYourSpace = page.getByText(/this space isn['’]?t yours/i).first();
   }
 
-  /** Email + password, then the OTP step. The dev env pre-fills the code. */
+  /**
+   * Email + password, then the OTP step. The dev env pre-fills the code.
+   *
+   * The login API intermittently answers "Invalid credentials" for a correct password,
+   * and a first click can be swallowed while the form is settling — so Send code is
+   * clicked again straight away, up to LIMITS.MAX_LOGIN_CLICKS times, until the OTP lands.
+   */
   async submitCredentials({ email, password }) {
+    const filledDigits = () =>
+      this.otpDigits.evaluateAll((els) => els.filter((el) => el.value.trim()).length);
+
     await this.gotoRoot();
     await this.email.fill(email);
     await this.password.fill(password);
-    await this.sendCode.click();
-    // dev env pre-fills the OTP — put the real code entry here if that ever changes.
-    // Fail here if it never lands, rather than clicking Verify on an empty code.
+
+    let outcome = null;
+    for (let attempt = 1; attempt <= LIMITS.MAX_LOGIN_CLICKS; attempt++) {
+      // A request that never answered leaves the form disabled with a nameless spinner in
+      // place of Send code, so clicking again would just wait on the stuck request. Start
+      // over on a fresh page instead.
+      if (outcome === 'no response') {
+        await this.gotoRoot();
+        await this.email.fill(email);
+        await this.password.fill(password);
+      }
+
+      // The error can clear the fields; only refill what's gone, no reload.
+      if (!(await this.email.inputValue())) await this.email.fill(email);
+      if (!(await this.password.inputValue())) await this.password.fill(password);
+
+      const staleError = await this.invalidCredentials.isVisible();
+      await this.sendCode.click();
+      // Don't let the previous attempt's "Invalid credentials" count as this one's answer.
+      if (staleError) {
+        await this.invalidCredentials
+          .waitFor({ state: 'hidden', timeout: TIMEOUTS.DIALOG })
+          .catch(() => {});
+      }
+
+      // Whichever lands first: the error, or all six digits on the verify screen.
+      outcome = 'no response';
+      await expect
+        .poll(async () => {
+          if ((await filledDigits().catch(() => 0)) === 6) {
+            outcome = 'otp';
+          } else if (await this.invalidCredentials.isVisible().catch(() => false)) {
+            outcome = 'invalid credentials';
+          }
+          return outcome;
+        }, { timeout: TIMEOUTS.BRANCH })
+        .toMatch(/^(otp|invalid credentials)$/)
+        .catch(() => {});
+
+      if (outcome === 'otp') break;
+
+      expect(attempt, `login for ${email} still failing (${outcome}) after ` +
+        `${LIMITS.MAX_LOGIN_CLICKS} clicks on Send code`).toBeLessThan(LIMITS.MAX_LOGIN_CLICKS);
+      console.log(`Login attempt ${attempt} for ${email}: ${outcome} — ${outcome === 'no response' ? 'reloading and retrying' : 'clicking Send code again'}`);
+      // Back off a little more each time: hammering the endpoint earns a 429.
+      await this.page.waitForTimeout(2000 * attempt);
+    }
+
     await expect
-      .poll(() => this.otpDigits.evaluateAll((els) => els.filter((el) => el.value.trim()).length), {
+      .poll(filledDigits, {
         timeout: TIMEOUTS.LIST,
-        message: `auto-filled OTP on the verify screen for ${email}`,
+        message: `OTP must appear before Verify for ${email}`,
       })
       .toBe(6);
     await this.verify.click();

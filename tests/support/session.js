@@ -7,11 +7,12 @@
 /**
  * @param {import('@playwright/test').Browser} browser
  * @param {(page: import('@playwright/test').Page) => Promise<T>} run
+ * @param {import('@playwright/test').BrowserContextOptions} [contextOptions]
  * @returns {Promise<T>}
  * @template T
  */
-async function withFreshContext(browser, run) {
-  const context = await browser.newContext();
+async function withFreshContext(browser, run, contextOptions = {}) {
+  const context = await browser.newContext(contextOptions);
   try {
     const page = await context.newPage();
     return await run(page);
